@@ -1,7 +1,7 @@
 'use client';
 
 import { notFound, useRouter } from 'next/navigation';
-import { useEffect, use } from 'react';
+import { useEffect, use, useState } from 'react';
 import Link from 'next/link';
 import { events } from '@/lib/data';
 import { Button } from '@/components/ui/button';
@@ -19,41 +19,51 @@ export default function BookingConfirmationPage({ params }: { params: { id: stri
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const [isBookingProcessed, setIsBookingProcessed] = useState(false);
 
   useEffect(() => {
-    // This effect only handles redirection if the user is not logged in.
-    if (!isUserLoading && !user) {
-      router.push(`/login?redirect_to=/events/${id}`);
+    if (isUserLoading) {
+      return; // Wait until user status is resolved
     }
-  }, [user, isUserLoading, router, id]);
 
-  // The core logic is now outside useEffect to run as soon as data is available.
-  if (!isUserLoading && user && event && firestore) {
-    const reservationRef = doc(firestore, 'users', user.uid, 'reservations', event.id);
-    const reservationData = {
-      eventId: event.id,
-      eventName: event.name,
-      date: event.date,
-      location: event.location,
-      imageUrl: event.imageUrl,
-      imageHint: event.imageHint,
-      reservedAt: new Date().toISOString(),
-    };
-    
-    // Save the reservation to Firestore.
-    setDocumentNonBlocking(reservationRef, reservationData, { merge: true });
+    if (!user) {
+      router.push(`/login?redirect_to=/events/${id}`);
+      return;
+    }
 
-    // Send confirmation email.
-    sendConfirmationEmailAction({
-      userEmail: user.email!,
-      eventName: event.name,
-      eventDate: event.date,
-      eventLocation: event.location,
-    });
-  }
+    // Process booking only if we have a user, event, firestore instance, and it hasn't been processed yet.
+    if (user && event && firestore && !isBookingProcessed) {
+      const reservationRef = doc(firestore, 'users', user.uid, 'reservations', event.id);
+      const reservationData = {
+        eventId: event.id,
+        eventName: event.name,
+        date: event.date,
+        location: event.location,
+        imageUrl: event.imageUrl,
+        imageHint: event.imageHint,
+        reservedAt: new Date().toISOString(),
+      };
+
+      // Save the reservation to Firestore.
+      setDocumentNonBlocking(reservationRef, reservationData, { merge: true });
+
+      // Send confirmation email.
+      if (user.email) {
+        sendConfirmationEmailAction({
+          userEmail: user.email,
+          eventName: event.name,
+          eventDate: event.date,
+          eventLocation: event.location,
+        });
+      }
+      
+      // Mark as processed to prevent re-running
+      setIsBookingProcessed(true);
+    }
+  }, [user, isUserLoading, event, firestore, router, id, isBookingProcessed]);
 
 
-  if (isUserLoading || !user) {
+  if (isLoading || !isBookingProcessed) {
     return (
       <div className="container flex items-center justify-center py-12 md:py-24">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
