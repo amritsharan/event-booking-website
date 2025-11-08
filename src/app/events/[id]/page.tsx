@@ -73,8 +73,8 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
     if (!input) return;
   
     // Temporarily make hidden elements visible for capture
-    const hiddenElements = input.querySelectorAll('.invisible-for-pdf');
-    hiddenElements.forEach(el => el.classList.remove('invisible-for-pdf'));
+    const elementsToHide = input.querySelectorAll('.hide-from-pdf');
+    elementsToHide.forEach(el => el.classList.add('invisible-for-pdf'));
   
     const canvas = await html2canvas(input, {
       scale: 2, // Higher scale for better resolution
@@ -113,99 +113,105 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
     pdf.save(`${event.name}.pdf`);
   
     // Hide the elements again after capture
-    hiddenElements.forEach(el => el.classList.add('invisible-for-pdf'));
+    elementsToHide.forEach(el => el.classList.remove('invisible-for-pdf'));
   };
 
   return (
     <div className="container py-12 md:py-16">
-      <div className="max-w-6xl mx-auto grid md:grid-cols-5 gap-8 lg:gap-12" ref={pdfRef}>
-        <div className="md:col-span-3">
-          <div className="relative aspect-[3/2] w-full overflow-hidden rounded-lg shadow-lg shadow-primary/20">
-            <Image
-              src={event.imageUrl}
-              alt={event.name}
-              fill
-              style={{ objectFit: 'cover' }}
-              data-ai-hint={event.imageHint}
-              crossOrigin="anonymous"
-            />
-          </div>
-          <div className="flex justify-between items-start mt-8">
-            <h1 className="font-headline text-3xl md:text-5xl font-bold text-primary">{event.name}</h1>
-            <div className="flex gap-2 invisible-for-pdf">
-               <Button variant="outline" onClick={handleDownloadPdf}>
-                <FileText className="mr-2 h-4 w-4" />
-                PDF
-              </Button>
-              <Button variant="outline" onClick={handleDownloadPpt}>
-                <Download className="mr-2 h-4 w-4" />
-                PPT
-              </Button>
+      <div className="max-w-6xl mx-auto" ref={pdfRef}>
+        <div className="grid md:grid-cols-5 gap-8 lg:gap-12">
+          <div className="md:col-span-3">
+            <div className="relative aspect-[3/2] w-full overflow-hidden rounded-lg shadow-lg shadow-primary/20">
+              <Image
+                src={event.imageUrl}
+                alt={event.name}
+                fill
+                style={{ objectFit: 'cover' }}
+                data-ai-hint={event.imageHint}
+                crossOrigin="anonymous"
+              />
+            </div>
+            <div className="mt-8">
+              <h1 className="font-headline text-3xl md:text-5xl font-bold text-primary">{event.name}</h1>
+            </div>
+            <p className="mt-4 text-lg text-muted-foreground">{event.description}</p>
+            <div className="mt-8 border-t border-border pt-6">
+              <h2 className="font-headline text-2xl font-semibold">About this event</h2>
+              <p className="mt-4 text-foreground/90 whitespace-pre-wrap">{event.longDescription}</p>
             </div>
           </div>
-          <p className="mt-4 text-lg text-muted-foreground">{event.description}</p>
-          <div className="mt-8 border-t border-border pt-6">
-            <h2 className="font-headline text-2xl font-semibold">About this event</h2>
-            <p className="mt-4 text-foreground/90 whitespace-pre-wrap">{event.longDescription}</p>
-          </div>
-        </div>
-        <div className="md:col-span-2">
-          <Card className="sticky top-24">
-            <CardHeader>
-              <CardTitle className="font-headline text-2xl">Event Details</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 text-sm">
-              <div className="flex items-start">
-                <Calendar className="h-5 w-5 mr-3 mt-0.5 text-primary flex-shrink-0" />
-                <div>
-                  <p className="font-semibold">{format(new Date(event.date), 'eeee, MMMM d, yyyy')}</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <Clock className="h-5 w-5 mr-3 mt-0.5 text-primary flex-shrink-0" />
-                <div>
-                  <p className="font-semibold">{event.time}</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <MapPin className="h-5 w-5 mr-3 mt-0.5 text-primary flex-shrink-0" />
-                <div>
-                  <p className="font-semibold">{event.venue}</p>
-                  <p className="text-muted-foreground">{event.location}</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <Tag className="h-5 w-5 mr-3 mt-0.5 text-primary flex-shrink-0" />
-                <div>
-                  <p className="font-semibold">{event.category}</p>
-                </div>
-              </div>
-            </CardContent>
-            
-            <div className="invisible-for-pdf">
-              <CardHeader className="border-t">
-                <CardTitle className="font-headline text-2xl">Book Tickets</CardTitle>
+          <div className="md:col-span-2">
+            <Card className="sticky top-24">
+              <CardHeader>
+                <CardTitle className="font-headline text-2xl">Event Details</CardTitle>
               </CardHeader>
-              <CardContent>
-                <form>
-                  <RadioGroup defaultValue={event.ticketTypes[0].id} className="mb-6">
-                    {event.ticketTypes.map(ticket => (
-                      <div key={ticket.id} className="flex items-center justify-between rounded-md border border-border p-4 has-[:checked]:border-primary">
-                        <Label htmlFor={ticket.id} className="flex flex-col gap-1 cursor-pointer">
-                          <span>{ticket.name}</span>
-                          <span className="font-bold text-primary">${ticket.price.toFixed(2)}</span>
-                        </Label>
-                        <RadioGroupItem value={ticket.id} id={ticket.id} />
-                      </div>
-                    ))}
-                  </RadioGroup>
-                  <Button asChild size="lg" className="w-full">
-                    <Link href={`/checkout/${event.id}`}>Book Now</Link>
-                  </Button>
-                </form>
+              <CardContent className="grid gap-4 text-sm">
+                <div className="flex items-start">
+                  <Calendar className="h-5 w-5 mr-3 mt-0.5 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold">{format(new Date(event.date), 'eeee, MMMM d, yyyy')}</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <Clock className="h-5 w-5 mr-3 mt-0.5 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold">{event.time}</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <MapPin className="h-5 w-5 mr-3 mt-0.5 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold">{event.venue}</p>
+                    <p className="text-muted-foreground">{event.location}</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <Tag className="h-5 w-5 mr-3 mt-0.5 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold">{event.category}</p>
+                  </div>
+                </div>
               </CardContent>
-            </div>
-          </Card>
+              
+              <div className="hide-from-pdf">
+                <CardHeader className="border-t">
+                  <CardTitle className="font-headline text-2xl">Downloads</CardTitle>
+                </CardHeader>
+                <CardContent className="flex gap-4">
+                  <Button variant="outline" onClick={handleDownloadPdf} className="w-full">
+                    <FileText className="mr-2 h-4 w-4" />
+                    PDF
+                  </Button>
+                  <Button variant="outline" onClick={handleDownloadPpt} className="w-full">
+                    <Download className="mr-2 h-4 w-4" />
+                    PPT
+                  </Button>
+                </CardContent>
+
+                <CardHeader className="border-t">
+                  <CardTitle className="font-headline text-2xl">Book Tickets</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form>
+                    <RadioGroup defaultValue={event.ticketTypes[0].id} className="mb-6">
+                      {event.ticketTypes.map(ticket => (
+                        <div key={ticket.id} className="flex items-center justify-between rounded-md border border-border p-4 has-[:checked]:border-primary">
+                          <Label htmlFor={ticket.id} className="flex flex-col gap-1 cursor-pointer">
+                            <span>{ticket.name}</span>
+                            <span className="font-bold text-primary">${ticket.price.toFixed(2)}</span>
+                          </Label>
+                          <RadioGroupItem value={ticket.id} id={ticket.id} />
+                        </div>
+                      ))}
+                    </RadioGroup>
+                    <Button asChild size="lg" className="w-full">
+                      <Link href={`/checkout/${event.id}`}>Book Now</Link>
+                    </Button>
+                  </form>
+                </CardContent>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

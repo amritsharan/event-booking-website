@@ -60,7 +60,7 @@
 
 @layer utilities {
   .invisible-for-pdf {
-    visibility: hidden;
+    display: none !important;
   }
 }
 
