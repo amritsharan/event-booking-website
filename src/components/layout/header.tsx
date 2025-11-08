@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Ticket, LogOut } from 'lucide-react';
+import { Ticket, LogOut, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -77,6 +77,12 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/login-history">
+                    <History className="mr-2 h-4 w-4" />
+                    <span>Login History</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>

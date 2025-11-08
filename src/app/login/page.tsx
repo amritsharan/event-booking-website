@@ -11,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, LogIn, CheckCircle } from 'lucide-react';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { collection } from 'firebase/firestore';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +38,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const auth = useAuth();
+  const firestore = useFirestore();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -50,7 +52,18 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // Log the login history
+      if (user && firestore) {
+        const loginHistoryRef = collection(firestore, 'users', user.uid, 'loginHistory');
+        const loginData = {
+          timestamp: new Date().toISOString(),
+        };
+        addDocumentNonBlocking(loginHistoryRef, loginData);
+      }
+
       setSuccess(true);
     } catch (error: any) {
       console.error('Login Error:', error);

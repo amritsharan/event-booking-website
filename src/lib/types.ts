@@ -29,3 +29,8 @@ export type Reservation = {
   imageHint: string;
   reservedAt: string;
 };
+
+export type LoginHistory = {
+  id: string; // This will be the document ID from Firestore
+  timestamp: string;
+};

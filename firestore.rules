@@ -11,6 +11,7 @@
  * Key Security Decisions:
  * - Users can only read and write their own profile data.
  * - Users can only read and write their own reservations.
+ * - Users can only read their own login history, and can only create new login history entries.
  * - Listing users is disallowed.
  */
 rules_version = '2';
@@ -39,6 +40,15 @@ service cloud.firestore {
        */
       match /reservations/{reservationId} {
         allow read, write, delete: if isOwner(userId);
+      }
+
+      /**
+       * @description Secures login history for a specific user.
+       * @path /users/{userId}/loginHistory/{historyId}
+       */
+      match /loginHistory/{historyId} {
+        allow read, create: if isOwner(userId);
+        allow update, delete: if false; // Disallow updates and deletes
       }
     }
   }

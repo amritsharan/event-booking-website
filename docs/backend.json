@@ -84,6 +84,22 @@
         "imageHint",
         "reservedAt"
       ]
+    },
+    "LoginHistory": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Login History",
+      "type": "object",
+      "description": "Represents a record of a user's login activity.",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "description": "The ISO 8601 timestamp of the login event.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "timestamp"
+      ]
     }
   },
   "auth": {
@@ -126,6 +142,26 @@
             {
               "name": "reservationId",
               "description": "The unique identifier for the reservation, typically the event ID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/loginHistory/{historyId}",
+        "definition": {
+          "entityName": "LoginHistory",
+          "schema": {
+            "$ref": "#/backend/entities/LoginHistory"
+          },
+          "description": "Stores login activity for a specific user. Only the user can read their own login history. New entries are created on login.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user. Matches request.auth.uid."
+            },
+            {
+              "name": "historyId",
+              "description": "The unique identifier for the login history entry."
             }
           ]
         }
