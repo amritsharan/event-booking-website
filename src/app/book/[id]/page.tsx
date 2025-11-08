@@ -1,7 +1,7 @@
 'use client';
 
 import { notFound } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, use } from 'react';
 import Link from 'next/link';
 import { events } from '@/lib/data';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,8 @@ import { sendConfirmationEmailAction } from '@/app/actions';
 
 
 export default function BookingConfirmationPage({ params }: { params: { id: string } }) {
-  const event = events.find(e => e.id === params.id);
+  const id = params.id;
+  const event = events.find(e => e.id === id);
 
   useEffect(() => {
     if (event) {
