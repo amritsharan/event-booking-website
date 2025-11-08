@@ -1,0 +1,69 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Gilded Events platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user.",
+          "format": "uuid"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "dateJoined": {
+          "type": "string",
+          "description": "The date and time the user joined the platform.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "dateJoined"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. Only the authenticated user can read/write their own profile. This path ensures path-based ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user.  Matches request.auth.uid."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This design prioritizes security and scalability for the Gilded Events platform.  It leverages path-based ownership for user data and avoids `get()` calls in security rules by denormalizing necessary authorization data. This approach ensures atomic operations and simplifies debugging.  Authorization independence is achieved by storing role information directly within documents or using existence checks in dedicated collections, eliminating hierarchical dependencies.\n\nSpecifically, user data is stored under `/users/{userId}`, ensuring only the user has access. The structure supports the QAPs by enforcing that each collection only stores one type of document which all share the same security posture. Since there is no collaborative data, there is no need for membership maps.\n"
+  }
+}
