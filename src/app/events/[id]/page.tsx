@@ -1,3 +1,6 @@
+
+'use client';
+
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -6,14 +9,59 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Calendar, MapPin, Tag, Clock } from 'lucide-react';
+import { Calendar, MapPin, Tag, Clock, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import pptxgen from "pptxgenjs";
 
 export default function EventDetailsPage({ params }: { params: { id: string } }) {
   const event = events.find(e => e.id === params.id);
 
   if (!event) {
     notFound();
+  }
+  
+  const handleDownloadPpt = () => {
+    if (!event) return;
+
+    const pptx = new pptxgen();
+    const slide = pptx.addSlide();
+
+    // Add a title
+    slide.addText(event.name, { 
+      x: 0.5, 
+      y: 0.5, 
+      w: '90%', 
+      h: 1, 
+      fontSize: 32, 
+      bold: true, 
+      color: "D4AF37", // Primary color
+      align: 'center' 
+    });
+    
+    // Add the event image
+    // Note: pptxgenjs requires a CORS-enabled image URL or a base64 string.
+    // Unsplash URLs are CORS-enabled.
+    slide.addImage({ 
+      path: event.imageUrl, 
+      x: 1, 
+      y: 1.75, 
+      w: 8, 
+      h: 4.5 
+    });
+
+    // Add event details
+    const details = `Date: ${format(new Date(event.date), 'eeee, MMMM d, yyyy')} at ${event.time}\nLocation: ${event.venue}, ${event.location}`;
+    slide.addText(details, { 
+      x: 0.5, 
+      y: 6.5, 
+      w: '90%', 
+      h: 1, 
+      fontSize: 18, 
+      color: "FFFFFF",
+      align: 'center'
+    });
+
+    pptx.writeFile({ fileName: `${event.name}.pptx` });
   }
 
   return (
@@ -29,7 +77,13 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
               data-ai-hint={event.imageHint}
             />
           </div>
-          <h1 className="font-headline text-3xl md:text-5xl font-bold mt-8 text-primary">{event.name}</h1>
+          <div className="flex justify-between items-start mt-8">
+            <h1 className="font-headline text-3xl md:text-5xl font-bold text-primary">{event.name}</h1>
+            <Button variant="outline" onClick={handleDownloadPpt}>
+              <Download className="mr-2 h-4 w-4" />
+              Download as PPT
+            </Button>
+          </div>
           <p className="mt-4 text-lg text-muted-foreground">{event.description}</p>
           <div className="mt-8 border-t border-border pt-6">
             <h2 className="font-headline text-2xl font-semibold">About this event</h2>
