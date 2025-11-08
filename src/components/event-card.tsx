@@ -7,8 +7,8 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export function EventCard({ event }: { event: Event }) {
   return (
-    <Card className="overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 bg-card border-border">
-      <Link href={`/events/${event.id}`} className="block group">
+    <Card className="group overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 bg-card border-border hover:z-10 relative">
+      <Link href={`/events/${event.id}`} className="block">
         <CardContent className="p-0">
           <div className="relative h-48 w-full">
             <Image
