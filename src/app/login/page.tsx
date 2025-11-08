@@ -5,13 +5,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, LogIn } from 'lucide-react';
+import { Loader2, LogIn, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import {
@@ -34,8 +33,9 @@ type FormValues = z.infer<typeof formSchema>;
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const auth = useAuth();
 
   const form = useForm<FormValues>({
@@ -51,11 +51,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      toast({
-        title: 'Login Successful',
-        description: "You've been successfully logged in.",
-      });
-      router.push('/');
+      setSuccess(true);
     } catch (error: any) {
       console.error('Login Error:', error);
       let errorMessage = 'An unexpected error occurred. Please try again.';
@@ -78,6 +74,12 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   }
+
+  const handleSuccessRedirect = () => {
+    setSuccess(false);
+    const redirectTo = searchParams.get('redirect_to') || '/';
+    router.push(redirectTo);
+  };
 
   return (
     <>
@@ -134,6 +136,24 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={success} onOpenChange={setSuccess}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+                <CheckCircle className="h-10 w-10 text-primary" />
+             </div>
+            <AlertDialogTitle className="text-center">Login Successful</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              You&apos;ve been successfully logged in.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleSuccessRedirect}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!error} onOpenChange={() => setError(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

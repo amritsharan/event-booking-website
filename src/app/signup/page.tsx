@@ -10,8 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus } from 'lucide-react';
+import { Loader2, UserPlus, CheckCircle } from 'lucide-react';
 import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
@@ -37,7 +36,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
@@ -71,11 +70,7 @@ export default function SignUpPage() {
 
       setDocumentNonBlocking(userDocRef, userData, { merge: false });
 
-      toast({
-        title: 'Account Created',
-        description: "You've been successfully signed up.",
-      });
-      router.push('/');
+      setSuccess(true);
     } catch (error: any) {
       console.error('Sign Up Error:', error);
       let errorMessage = 'An unexpected error occurred. Please try again.';
@@ -98,6 +93,11 @@ export default function SignUpPage() {
     } finally {
       setIsLoading(false);
     }
+  }
+  
+  const handleSuccessRedirect = () => {
+    setSuccess(false);
+    router.push('/');
   }
 
   return (
@@ -183,6 +183,24 @@ export default function SignUpPage() {
           </CardContent>
         </Card>
       </div>
+
+       <AlertDialog open={success} onOpenChange={setSuccess}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+                <CheckCircle className="h-10 w-10 text-primary" />
+             </div>
+            <AlertDialogTitle className="text-center">Account Created!</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              You&apos;ve been successfully signed up. Welcome to Gilded Events!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleSuccessRedirect}>Start Exploring</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!error} onOpenChange={() => setError(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
