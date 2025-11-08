@@ -1,29 +1,39 @@
 
 'use client';
 
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
 import { use, useRef } from 'react';
 import { events } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Calendar, MapPin, Tag, Clock, Download, FileText } from 'lucide-react';
+import { Calendar, MapPin, Tag, Clock, Download, FileText, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import pptxgen from "pptxgenjs";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useUser } from '@/firebase';
 
 export default function EventDetailsPage({ params }: { params: { id: string } }) {
   const resolvedParams = use(params);
   const event = events.find(e => e.id === resolvedParams.id);
   const pdfRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const { user, isUserLoading } = useUser();
 
   if (!event) {
     notFound();
   }
+
+  const handleBookingClick = () => {
+    if (user) {
+      router.push(`/checkout/${event.id}`);
+    } else {
+      router.push(`/login?redirect_to=/checkout/${event.id}`);
+    }
+  };
   
   const handleDownloadPpt = () => {
     if (!event) return;
@@ -74,7 +84,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
   
     // Temporarily make hidden elements visible for capture
     const elementsToHide = input.querySelectorAll('.hide-from-pdf');
-    elementsToHide.forEach(el => el.classList.add('invisible-for-pdf'));
+    elementsToHide.forEach(el => el.classList.remove('hide-from-pdf'));
   
     const canvas = await html2canvas(input, {
       scale: 2, // Higher scale for better resolution
@@ -113,7 +123,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
     pdf.save(`${event.name}.pdf`);
   
     // Hide the elements again after capture
-    elementsToHide.forEach(el => el.classList.remove('invisible-for-pdf'));
+    elementsToHide.forEach(el => el.classList.add('hide-from-pdf'));
   };
 
   return (
@@ -192,7 +202,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                   <CardTitle className="font-headline text-2xl">Book Tickets</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form>
+                  <div>
                     <RadioGroup defaultValue={event.ticketTypes[0].id} className="mb-6">
                       {event.ticketTypes.map(ticket => (
                         <div key={ticket.id} className="flex items-center justify-between rounded-md border border-border p-4 has-[:checked]:border-primary">
@@ -204,10 +214,16 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                         </div>
                       ))}
                     </RadioGroup>
-                    <Button asChild size="lg" className="w-full">
-                      <Link href={`/checkout/${event.id}`}>Book Now</Link>
+                    <Button onClick={handleBookingClick} disabled={isUserLoading} size="lg" className="w-full">
+                      {isUserLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : user ? (
+                        'Book Now'
+                      ) : (
+                        'Login to Book'
+                      )}
                     </Button>
-                  </form>
+                  </div>
                 </CardContent>
               </div>
             </Card>
