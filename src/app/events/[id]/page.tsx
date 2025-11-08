@@ -4,6 +4,7 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { use } from 'react';
 import { events } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +15,8 @@ import { format } from 'date-fns';
 import pptxgen from "pptxgenjs";
 
 export default function EventDetailsPage({ params }: { params: { id: string } }) {
-  const event = events.find(e => e.id === params.id);
+  const resolvedParams = use(params);
+  const event = events.find(e => e.id === resolvedParams.id);
 
   if (!event) {
     notFound();
