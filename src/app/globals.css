@@ -58,6 +58,12 @@
   }
 }
 
+@layer utilities {
+  .invisible-for-pdf {
+    visibility: hidden;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
