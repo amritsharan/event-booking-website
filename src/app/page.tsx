@@ -52,7 +52,7 @@ export default function Home() {
 
       <section id="events" className="container py-12 md:py-24">
         <h2 className="font-headline text-3xl md:text-4xl font-bold text-center mb-12">Upcoming Events</h2>
-        <div className="mb-8 flex flex-col md:flex-row gap-4 items-center">
+        <div className="mb-8 flex flex-col md:flex-row gap-4 items-center max-w-5xl mx-auto">
           <div className="relative w-full md:flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
@@ -81,7 +81,7 @@ export default function Home() {
         </div>
 
         {filteredEvents.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {filteredEvents.map(event => (
               <EventCard key={event.id} event={event} />
             ))}
