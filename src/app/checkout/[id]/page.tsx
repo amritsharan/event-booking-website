@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { notFound, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,7 +27,8 @@ type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 export default function CheckoutPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
-  const event = events.find(e => e.id === params.id);
+  const resolvedParams = use(params);
+  const event = events.find(e => e.id === resolvedParams.id);
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<PaymentFormValues>({
@@ -41,7 +42,7 @@ export default function CheckoutPage({ params }: { params: { id: string } }) {
   });
 
   if (!isUserLoading && !user) {
-    router.push(`/login?redirect_to=/checkout/${params.id}`);
+    router.push(`/login?redirect_to=/checkout/${resolvedParams.id}`);
   }
 
   if (!event) {
@@ -52,7 +53,7 @@ export default function CheckoutPage({ params }: { params: { id: string } }) {
     setIsLoading(true);
     // Simulate payment processing
     await new Promise(resolve => setTimeout(resolve, 2000));
-    router.push(`/book/${event.id}`);
+    router.push(`/book/${event!.id}`);
   }
 
   return (
