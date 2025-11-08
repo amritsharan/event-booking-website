@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, use, useEffect } from 'react';
 import { notFound, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,9 +41,12 @@ export default function CheckoutPage({ params }: { params: { id: string } }) {
     },
   });
 
-  if (!isUserLoading && !user) {
-    router.push(`/login?redirect_to=/checkout/${resolvedParams.id}`);
-  }
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push(`/login?redirect_to=/checkout/${resolvedParams.id}`);
+    }
+  }, [isUserLoading, user, router, resolvedParams.id]);
+
 
   if (!event) {
     notFound();
@@ -54,6 +57,14 @@ export default function CheckoutPage({ params }: { params: { id: string } }) {
     // Simulate payment processing
     await new Promise(resolve => setTimeout(resolve, 2000));
     router.push(`/book/${event!.id}`);
+  }
+  
+  if (isUserLoading || !user) {
+    return (
+      <div className="container flex items-center justify-center py-12 md:py-24">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
