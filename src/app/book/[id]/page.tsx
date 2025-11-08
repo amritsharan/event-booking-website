@@ -12,7 +12,8 @@ import { sendConfirmationEmailAction } from '@/app/actions';
 
 
 export default function BookingConfirmationPage({ params }: { params: { id: string } }) {
-  const id = params.id;
+  const resolvedParams = use(params);
+  const id = resolvedParams.id;
   const event = events.find(e => e.id === id);
 
   useEffect(() => {
