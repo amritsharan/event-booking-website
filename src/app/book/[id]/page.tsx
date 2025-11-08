@@ -21,17 +21,14 @@ export default function BookingConfirmationPage({ params }: { params: { id: stri
   const router = useRouter();
 
   useEffect(() => {
-    if (isUserLoading || !event) {
-      return;
-    }
-
-    if (!user) {
-      // Redirect to login if user is not authenticated
+    // This effect only handles redirection if the user is not logged in.
+    if (!isUserLoading && !user) {
       router.push(`/login?redirect_to=/events/${id}`);
-      return;
     }
+  }, [user, isUserLoading, router, id]);
 
-    // Save the reservation to Firestore
+  // The core logic is now outside useEffect to run as soon as data is available.
+  if (!isUserLoading && user && event && firestore) {
     const reservationRef = doc(firestore, 'users', user.uid, 'reservations', event.id);
     const reservationData = {
       eventId: event.id,
@@ -42,37 +39,31 @@ export default function BookingConfirmationPage({ params }: { params: { id: stri
       imageHint: event.imageHint,
       reservedAt: new Date().toISOString(),
     };
+    
+    // Save the reservation to Firestore.
     setDocumentNonBlocking(reservationRef, reservationData, { merge: true });
 
-    // Send confirmation email
+    // Send confirmation email.
     sendConfirmationEmailAction({
       userEmail: user.email!,
       eventName: event.name,
       eventDate: event.date,
       eventLocation: event.location,
     });
+  }
 
-  }, [event, user, isUserLoading, firestore, router, id]);
 
-  if (isUserLoading) {
+  if (isUserLoading || !user) {
     return (
       <div className="container flex items-center justify-center py-12 md:py-24">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-4">Confirming your booking...</p>
       </div>
     );
   }
 
   if (!event) {
     notFound();
-  }
-  
-  if (!user) {
-    // This will be shown briefly before redirection
-     return (
-      <div className="container flex items-center justify-center py-12 md:py-24">
-        <p>Redirecting to login...</p>
-      </div>
-    );
   }
 
   return (
