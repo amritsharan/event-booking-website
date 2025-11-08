@@ -1,38 +1,78 @@
 'use client';
 
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import { useEffect, use } from 'react';
 import Link from 'next/link';
 import { events } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { sendConfirmationEmailAction } from '@/app/actions';
-
+import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function BookingConfirmationPage({ params }: { params: { id: string } }) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
   const event = events.find(e => e.id === id);
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const router = useRouter();
 
   useEffect(() => {
-    if (event) {
-      // In a real app, you'd get the user's email from their session.
-      // For this example, we'll use a placeholder.
-      const userEmail = 'test@example.com';
-      sendConfirmationEmailAction({
-        userEmail,
-        eventName: event.name,
-        eventDate: event.date,
-        eventLocation: event.location,
-      });
+    if (isUserLoading || !event) {
+      return;
     }
-  }, [event]);
 
+    if (!user) {
+      // Redirect to login if user is not authenticated
+      router.push(`/login?redirect_to=/events/${id}`);
+      return;
+    }
+
+    // Save the reservation to Firestore
+    const reservationRef = doc(firestore, 'users', user.uid, 'reservations', event.id);
+    const reservationData = {
+      eventId: event.id,
+      eventName: event.name,
+      date: event.date,
+      location: event.location,
+      imageUrl: event.imageUrl,
+      imageHint: event.imageHint,
+      reservedAt: new Date().toISOString(),
+    };
+    setDocumentNonBlocking(reservationRef, reservationData, { merge: true });
+
+    // Send confirmation email
+    sendConfirmationEmailAction({
+      userEmail: user.email!,
+      eventName: event.name,
+      eventDate: event.date,
+      eventLocation: event.location,
+    });
+
+  }, [event, user, isUserLoading, firestore, router, id]);
+
+  if (isUserLoading) {
+    return (
+      <div className="container flex items-center justify-center py-12 md:py-24">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!event) {
     notFound();
+  }
+  
+  if (!user) {
+    // This will be shown briefly before redirection
+     return (
+      <div className="container flex items-center justify-center py-12 md:py-24">
+        <p>Redirecting to login...</p>
+      </div>
+    );
   }
 
   return (

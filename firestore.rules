@@ -10,45 +10,36 @@
  *
  * Key Security Decisions:
  * - Users can only read and write their own profile data.
+ * - Users can only read and write their own reservations.
  * - Listing users is disallowed.
- * - Denormalization is not needed as ownership is determined by the path.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
     /**
      * @description Secures user profile information. Only the authenticated user can read and write their own profile.
      * @path /users/{userId}
-     * @allow (create) - Authenticated user creates their own profile with matching UID.
-     *   request.auth.uid: "user123", request.resource.data.id: "user123"
-     * @allow (get, update, delete) - Authenticated user accesses their own profile.
-     *   request.auth.uid: "user123", resource.data.id: "user123"
-     * @deny (create) - Authenticated user attempts to create a profile for a different user.
-     *   request.auth.uid: "user123", request.resource.data.id: "user456"
-     * @deny (get, update, delete) - Authenticated user attempts to access another user's profile.
-     *   request.auth.uid: "user123", resource.data.id: "user456"
-     * @principle Enforces document ownership for all operations. Validates relational integrity.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
+      allow get, update, delete: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+
+      /**
+       * @description Secures event reservations for a specific user.
+       * @path /users/{userId}/reservations/{reservationId}
+       */
+      match /reservations/{reservationId} {
+        allow read, write, delete: if isOwner(userId);
       }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
     }
   }
 }

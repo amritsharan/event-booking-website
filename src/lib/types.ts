@@ -20,12 +20,12 @@ export type Event = {
 };
 
 export type Reservation = {
-  id: string;
+  id: string; // This will be the document ID from Firestore
   eventId: string;
   eventName: string;
   date: string;
   location: string;
-  status: 'upcoming' | 'past';
   imageUrl: string;
   imageHint: string;
+  reservedAt: string;
 };

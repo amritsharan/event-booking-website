@@ -37,6 +37,53 @@
         "email",
         "dateJoined"
       ]
+    },
+    "Reservation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reservation",
+      "type": "object",
+      "description": "Represents a user's reservation for an event.",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "description": "The ID of the event being reserved."
+        },
+        "eventName": {
+          "type": "string",
+          "description": "The name of the event."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date of the event.",
+          "format": "date"
+        },
+        "location": {
+          "type": "string",
+          "description": "The location of the event."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "The URL for the event's image."
+        },
+        "imageHint": {
+          "type": "string",
+          "description": "A hint for AI image generation."
+        },
+        "reservedAt": {
+          "type": "string",
+          "description": "The timestamp when the reservation was made.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "eventId",
+        "eventName",
+        "date",
+        "location",
+        "imageUrl",
+        "imageHint",
+        "reservedAt"
+      ]
     }
   },
   "auth": {
@@ -59,6 +106,26 @@
             {
               "name": "userId",
               "description": "The unique identifier of the user.  Matches request.auth.uid."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/reservations/{reservationId}",
+        "definition": {
+          "entityName": "Reservation",
+          "schema": {
+            "$ref": "#/backend/entities/Reservation"
+          },
+          "description": "Stores event reservations for a specific user. Only the user can manage their own reservations.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user. Matches request.auth.uid."
+            },
+            {
+              "name": "reservationId",
+              "description": "The unique identifier for the reservation, typically the event ID."
             }
           ]
         }

@@ -1,14 +1,19 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
-import { reservations } from '@/lib/data';
+import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, MapPin, Ticket } from 'lucide-react';
-import { format } from 'date-fns';
+import { Calendar, MapPin, Ticket, Loader2 } from 'lucide-react';
+import { format, isPast } from 'date-fns';
 import type { Reservation } from '@/lib/types';
 import { Button } from '@/components/ui/button';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 function ReservationCard({ reservation }: { reservation: Reservation }) {
+  const reservationStatus = isPast(new Date(reservation.date)) ? 'past' : 'upcoming';
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4 flex flex-col md:flex-row gap-4">
@@ -32,7 +37,7 @@ function ReservationCard({ reservation }: { reservation: Reservation }) {
             <span>{reservation.location}</span>
           </div>
           <div className="mt-4">
-            <Button asChild variant="secondary" disabled={reservation.status === 'past'}>
+            <Button asChild variant="secondary" disabled={reservationStatus === 'past'}>
               <Link href={`/events/${reservation.eventId}`}>View Event</Link>
             </Button>
           </div>
@@ -43,8 +48,31 @@ function ReservationCard({ reservation }: { reservation: Reservation }) {
 }
 
 export default function ReservationsPage() {
-  const upcomingReservations = reservations.filter(r => r.status === 'upcoming');
-  const pastReservations = reservations.filter(r => r.status === 'past');
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const reservationsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/reservations`);
+  }, [firestore, user]);
+
+  const { data: reservations, isLoading: areReservationsLoading } = useCollection<Reservation>(reservationsQuery);
+
+  const { upcomingReservations, pastReservations } = useMemo(() => {
+    if (!reservations) return { upcomingReservations: [], pastReservations: [] };
+    const upcoming: Reservation[] = [];
+    const past: Reservation[] = [];
+    reservations.forEach(res => {
+      if (isPast(new Date(res.date))) {
+        past.push(res);
+      } else {
+        upcoming.push(res);
+      }
+    });
+    return { upcomingReservations: upcoming, pastReservations: past };
+  }, [reservations]);
+  
+  const isLoading = isUserLoading || areReservationsLoading;
 
   return (
     <div className="container py-12 md:py-16">
@@ -53,37 +81,50 @@ export default function ReservationsPage() {
         <Ticket className="h-10 w-10 text-primary" />
       </div>
       
-      <Tabs defaultValue="upcoming" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
-          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          <TabsTrigger value="past">Past</TabsTrigger>
-        </TabsList>
-        <TabsContent value="upcoming">
-          <div className="grid gap-6">
-            {upcomingReservations.length > 0 ? (
-              upcomingReservations.map(res => <ReservationCard key={res.id} reservation={res} />)
-            ) : (
-              <div className="text-center text-muted-foreground py-10">
-                <p>You have no upcoming reservations.</p>
-                <Button asChild className="mt-4">
-                  <Link href="/">Explore Events</Link>
-                </Button>
-              </div>
-            )}
+      {isLoading ? (
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      ) : !user ? (
+         <div className="text-center text-muted-foreground py-10">
+            <p>Please log in to see your reservations.</p>
+            <Button asChild className="mt-4">
+              <Link href="/login">Login</Link>
+            </Button>
           </div>
-        </TabsContent>
-        <TabsContent value="past">
-          <div className="grid gap-6">
-            {pastReservations.length > 0 ? (
-              pastReservations.map(res => <ReservationCard key={res.id} reservation={res} />)
-            ) : (
-               <div className="text-center text-muted-foreground py-10">
-                <p>You have no past reservations.</p>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+      ) : (
+        <Tabs defaultValue="upcoming" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
+            <TabsTrigger value="upcoming">Upcoming ({upcomingReservations.length})</TabsTrigger>
+            <TabsTrigger value="past">Past ({pastReservations.length})</TabsTrigger>
+          </TabsList>
+          <TabsContent value="upcoming">
+            <div className="grid gap-6">
+              {upcomingReservations.length > 0 ? (
+                upcomingReservations.map(res => <ReservationCard key={res.id} reservation={res} />)
+              ) : (
+                <div className="text-center text-muted-foreground py-10">
+                  <p>You have no upcoming reservations.</p>
+                  <Button asChild className="mt-4">
+                    <Link href="/">Explore Events</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="past">
+            <div className="grid gap-6">
+              {pastReservations.length > 0 ? (
+                pastReservations.map(res => <ReservationCard key={res.id} reservation={res} />)
+              ) : (
+                 <div className="text-center text-muted-foreground py-10">
+                  <p>You have no past reservations.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }

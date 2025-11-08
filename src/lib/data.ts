@@ -1,4 +1,4 @@
-import type { Event, Reservation } from './types';
+import type { Event } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const getImage = (id: string) => {
@@ -111,7 +111,9 @@ export const events: Event[] = [
   },
 ];
 
-export const reservations: Reservation[] = [
+// This static data is no longer the primary source for the reservations page,
+// but it can be kept for reference or other purposes.
+export const reservations = [
   {
     id: 'r1',
     eventId: '3',
