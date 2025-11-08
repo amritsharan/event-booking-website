@@ -92,7 +92,7 @@ export default function CheckoutPage({ params }: { params: { id: string } }) {
           <Card>
             <CardHeader>
               <CardTitle className="font-headline text-2xl flex items-center gap-2"><CreditCard /> Payment Information</CardTitle>
-              <CardDescription>Enter your card details to complete the booking. (This is a simulation).</CardDescription>
+              <CardDescription>Enter your card details to complete the booking.</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
