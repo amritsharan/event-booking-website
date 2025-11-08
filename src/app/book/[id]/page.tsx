@@ -1,13 +1,33 @@
+'use client';
+
 import { notFound } from 'next/navigation';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { events } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
+import { sendConfirmationEmailAction } from '@/app/actions';
+
 
 export default function BookingConfirmationPage({ params }: { params: { id: string } }) {
   const event = events.find(e => e.id === params.id);
+
+  useEffect(() => {
+    if (event) {
+      // In a real app, you'd get the user's email from their session.
+      // For this example, we'll use a placeholder.
+      const userEmail = 'test@example.com';
+      sendConfirmationEmailAction({
+        userEmail,
+        eventName: event.name,
+        eventDate: event.date,
+        eventLocation: event.location,
+      });
+    }
+  }, [event]);
+
 
   if (!event) {
     notFound();
