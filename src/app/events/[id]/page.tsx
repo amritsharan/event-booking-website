@@ -86,7 +86,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                   ))}
                 </RadioGroup>
                 <Button asChild size="lg" className="w-full">
-                  <Link href={`/book/${event.id}`}>Book Now</Link>
+                  <Link href={`/checkout/${event.id}`}>Book Now</Link>
                 </Button>
               </form>
             </CardContent>
