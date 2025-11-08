@@ -61,11 +61,12 @@ export default function Home() {
               className="pl-10"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
+              suppressHydrationWarning
             />
           </div>
           <div className="w-full md:w-auto">
              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full md:w-[180px]">
+              <SelectTrigger className="w-full md:w-[180px]" suppressHydrationWarning>
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
