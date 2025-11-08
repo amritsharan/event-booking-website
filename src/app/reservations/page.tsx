@@ -52,7 +52,7 @@ export default function ReservationsPage() {
   const firestore = useFirestore();
 
   const reservationsQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return collection(firestore, `users/${user.uid}/reservations`);
   }, [firestore, user]);
 
@@ -63,12 +63,19 @@ export default function ReservationsPage() {
     const upcoming: Reservation[] = [];
     const past: Reservation[] = [];
     reservations.forEach(res => {
-      if (isPast(new Date(res.date))) {
-        past.push(res);
-      } else {
-        upcoming.push(res);
+      // Ensure date is valid before processing
+      if (res.date && !isNaN(new Date(res.date).getTime())) {
+          if (isPast(new Date(res.date))) {
+              past.push(res);
+          } else {
+              upcoming.push(res);
+          }
       }
     });
+    // Sort reservations by date
+    upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    past.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
     return { upcomingReservations: upcoming, pastReservations: past };
   }, [reservations]);
   
