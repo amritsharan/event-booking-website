@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { events, eventCategories } from '@/lib/data';
@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EventCard } from '@/components/event-card';
+import { EventGridSkeleton } from '@/components/loading-skeleton';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { Search } from 'lucide-react';
 
 export default function Home() {
@@ -81,11 +83,13 @@ export default function Home() {
         </div>
 
         {filteredEvents.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {filteredEvents.map(event => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
+          <ErrorBoundary>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {filteredEvents.map(event => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </ErrorBoundary>
         ) : (
           <div className="text-center py-16">
             <p className="text-lg text-muted-foreground">No events match your criteria.</p>

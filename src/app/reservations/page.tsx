@@ -11,6 +11,8 @@ import type { Reservation } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
+import { ReservationsSkeleton } from '@/components/loading-skeleton';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 function ReservationCard({ reservation }: { reservation: Reservation }) {
   const reservationStatus = isPast(new Date(reservation.date)) ? 'past' : 'upcoming';
@@ -89,9 +91,7 @@ export default function ReservationsPage() {
       </div>
       
       {isLoading ? (
-        <div className="flex justify-center items-center py-10">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
+        <ReservationsSkeleton />
       ) : !user ? (
          <div className="text-center text-muted-foreground py-10">
             <p>Please log in to see your reservations.</p>
@@ -100,37 +100,39 @@ export default function ReservationsPage() {
             </Button>
           </div>
       ) : (
-        <Tabs defaultValue="upcoming" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
-            <TabsTrigger value="upcoming">Upcoming ({upcomingReservations.length})</TabsTrigger>
-            <TabsTrigger value="past">Past ({pastReservations.length})</TabsTrigger>
-          </TabsList>
-          <TabsContent value="upcoming">
-            <div className="grid gap-6">
-              {upcomingReservations.length > 0 ? (
-                upcomingReservations.map(res => <ReservationCard key={res.id} reservation={res} />)
-              ) : (
-                <div className="text-center text-muted-foreground py-10">
-                  <p>You have no upcoming reservations.</p>
-                  <Button asChild className="mt-4">
-                    <Link href="/">Explore Events</Link>
-                  </Button>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          <TabsContent value="past">
-            <div className="grid gap-6">
-              {pastReservations.length > 0 ? (
-                pastReservations.map(res => <ReservationCard key={res.id} reservation={res} />)
-              ) : (
-                 <div className="text-center text-muted-foreground py-10">
-                  <p>You have no past reservations.</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+        <ErrorBoundary>
+          <Tabs defaultValue="upcoming" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
+              <TabsTrigger value="upcoming">Upcoming ({upcomingReservations.length})</TabsTrigger>
+              <TabsTrigger value="past">Past ({pastReservations.length})</TabsTrigger>
+            </TabsList>
+            <TabsContent value="upcoming">
+              <div className="grid gap-6">
+                {upcomingReservations.length > 0 ? (
+                  upcomingReservations.map(res => <ReservationCard key={res.id} reservation={res} />)
+                ) : (
+                  <div className="text-center text-muted-foreground py-10">
+                    <p>You have no upcoming reservations.</p>
+                    <Button asChild className="mt-4">
+                      <Link href="/">Explore Events</Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="past">
+              <div className="grid gap-6">
+                {pastReservations.length > 0 ? (
+                  pastReservations.map(res => <ReservationCard key={res.id} reservation={res} />)
+                ) : (
+                   <div className="text-center text-muted-foreground py-10">
+                    <p>You have no past reservations.</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </ErrorBoundary>
       )}
     </div>
   );

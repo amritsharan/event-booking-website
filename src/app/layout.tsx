@@ -7,8 +7,38 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Gilded Events',
-  description: 'Discover and reserve spots at various events.',
+  title: {
+    default: 'Gilded Events - Discover Your Next Experience',
+    template: '%s | Gilded Events'
+  },
+  description: 'Book tickets to exclusive concerts, festivals, and cultural events. Discover and reserve your spot at the most sought-after events.',
+  keywords: ['events', 'tickets', 'booking', 'concerts', 'festivals', 'entertainment', 'reservations'],
+  authors: [{ name: 'Gilded Events' }],
+  creator: 'Gilded Events',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://gildedevents.com',
+    title: 'Gilded Events - Discover Your Next Experience',
+    description: 'Book tickets to exclusive concerts, festivals, and cultural events.',
+    siteName: 'Gilded Events',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Gilded Events - Discover Your Next Experience',
+    description: 'Book tickets to exclusive concerts, festivals, and cultural events.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({
