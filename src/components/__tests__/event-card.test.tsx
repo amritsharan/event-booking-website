@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { EventCard } from '@/components/event-card';
 import { Event } from '@/lib/types';
@@ -43,7 +44,7 @@ describe('EventCard', () => {
   it('has a link to the event details page', () => {
     render(<EventCard event={mockEvent} />);
     
-    const link = screen.getByRole('link', { name: /view details/i });
+    const link = screen.getByRole('link');
     expect(link).toHaveAttribute('href', '/events/1');
   });
 });

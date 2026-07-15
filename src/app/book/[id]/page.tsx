@@ -1,6 +1,6 @@
 'use client';
 
-import { notFound, useRouter } from 'next/navigation';
+import { notFound, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, use, useState } from 'react';
 import Link from 'next/link';
 import { events } from '@/lib/data';
@@ -12,14 +12,23 @@ import { sendConfirmationEmailAction } from '@/app/actions';
 import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
-export default function BookingConfirmationPage({ params }: { params: { id: string } }) {
+export default function BookingConfirmationPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
   const event = events.find(e => e.id === id);
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isBookingProcessed, setIsBookingProcessed] = useState(false);
+
+  const ticketTypeId = searchParams.get('ticketType');
+  const quantity = parseInt(searchParams.get('quantity') || '1', 10);
+  const selectedTicket = event?.ticketTypes.find(t => t.id === ticketTypeId) || event?.ticketTypes[0];
+  const ticketPrice = selectedTicket?.price || 0;
+  const subtotal = ticketPrice * quantity;
+  const serviceFee = subtotal * 0.05;
+  const total = subtotal + serviceFee;
 
   useEffect(() => {
     if (isUserLoading) {
@@ -42,6 +51,9 @@ export default function BookingConfirmationPage({ params }: { params: { id: stri
         imageUrl: event.imageUrl,
         imageHint: event.imageHint,
         reservedAt: new Date().toISOString(),
+        ticketType: selectedTicket?.name || 'General Admission',
+        quantity: quantity,
+        totalPrice: total,
       };
 
       // Save the reservation to Firestore.
@@ -87,13 +99,20 @@ export default function BookingConfirmationPage({ params }: { params: { id: stri
           <CardDescription className="text-lg">You're all set for {event.name}.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-left border rounded-lg p-4 flex items-start space-x-4">
-            <div className="relative w-24 h-16 rounded-md overflow-hidden flex-shrink-0">
-               <Image src={event.imageUrl} alt={event.name} fill style={{objectFit: 'cover'}} data-ai-hint={event.imageHint} />
+          <div className="text-left border rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start space-x-4">
+              <div className="relative w-24 h-16 rounded-md overflow-hidden flex-shrink-0">
+                 <Image src={event.imageUrl} alt={event.name} fill style={{objectFit: 'cover'}} data-ai-hint={event.imageHint} />
+              </div>
+              <div>
+                <h4 className="font-bold">{event.name}</h4>
+                <p className="text-sm text-muted-foreground">{event.date} at {event.location}</p>
+                <p className="text-xs text-primary font-medium mt-1">Ticket: {selectedTicket?.name} (Qty: {quantity})</p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-bold">{event.name}</h4>
-              <p className="text-sm text-muted-foreground">{event.date} at {event.location}</p>
+            <div className="border-t md:border-t-0 pt-2 md:pt-0 text-right">
+              <span className="text-xs text-muted-foreground block">Amount Paid</span>
+              <span className="font-bold text-primary text-lg">${total.toFixed(2)}</span>
             </div>
           </div>
           <p className="mt-6 text-muted-foreground">A confirmation has been sent to your email. We look forward to seeing you there!</p>

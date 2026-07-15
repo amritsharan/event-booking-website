@@ -3,35 +3,40 @@
 
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { use, useRef } from 'react';
+import { use, useRef, useState } from 'react';
 import { events } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Calendar, MapPin, Tag, Clock, Download, FileText, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Tag, Clock, Download, FileText, Loader2, Minus, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import pptxgen from "pptxgenjs";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useUser } from '@/firebase';
+import { EventReviews } from '@/components/event-reviews';
 
-export default function EventDetailsPage({ params }: { params: { id: string } }) {
+export default function EventDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const event = events.find(e => e.id === resolvedParams.id);
   const pdfRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { user, isUserLoading } = useUser();
 
+  const [selectedTicketId, setSelectedTicketId] = useState(event ? event.ticketTypes[0].id : '');
+  const [quantity, setQuantity] = useState(1);
+
   if (!event) {
     notFound();
   }
 
   const handleBookingClick = () => {
+    const bookingUrl = `/checkout/${event.id}?ticketType=${selectedTicketId}&quantity=${quantity}`;
     if (user) {
-      router.push(`/checkout/${event.id}`);
+      router.push(bookingUrl);
     } else {
-      router.push(`/login?redirect_to=/checkout/${event.id}`);
+      router.push(`/login?redirect_to=${encodeURIComponent(bookingUrl)}`);
     }
   };
   
@@ -62,7 +67,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
       w: 8, 
       h: 4.5,
       cors: true
-    });
+    } as any);
 
     const details = `Date: ${format(new Date(event.date), 'eeee, MMMM d, yyyy')} at ${event.time}\nLocation: ${event.venue}, ${event.location}`;
     slide.addText(details, { 
@@ -149,6 +154,9 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
               <h2 className="font-headline text-2xl font-semibold">About this event</h2>
               <p className="mt-4 text-foreground/90 whitespace-pre-wrap">{event.longDescription}</p>
             </div>
+            <div className="mt-12 border-t border-border pt-8">
+              <EventReviews eventId={event.id} />
+            </div>
           </div>
           <div className="md:col-span-2">
             <Card className="sticky top-24">
@@ -203,7 +211,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                 </CardHeader>
                 <CardContent>
                   <div>
-                    <RadioGroup defaultValue={event.ticketTypes[0].id} className="mb-6">
+                    <RadioGroup value={selectedTicketId} onValueChange={setSelectedTicketId} className="mb-6">
                       {event.ticketTypes.map(ticket => (
                         <div key={ticket.id} className="flex items-center justify-between rounded-md border border-border p-4 has-[:checked]:border-primary">
                           <Label htmlFor={ticket.id} className="flex flex-col gap-1 cursor-pointer">
@@ -214,6 +222,35 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                         </div>
                       ))}
                     </RadioGroup>
+
+                    {/* Quantity Selector */}
+                    <div className="flex items-center justify-between mb-6 border border-border p-4 rounded-md">
+                      <span className="text-sm font-medium text-foreground">Quantity</span>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          type="button"
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                          disabled={quantity <= 1}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="w-8 text-center text-sm font-semibold">{quantity}</span>
+                        <Button 
+                          type="button"
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => setQuantity(q => Math.min(10, q + 1))}
+                          disabled={quantity >= 10}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
                     <Button onClick={handleBookingClick} disabled={isUserLoading} size="lg" className="w-full">
                       {isUserLoading ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, use, useEffect } from 'react';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound, useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,12 +24,22 @@ const paymentFormSchema = z.object({
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 
-export default function CheckoutPage({ params }: { params: { id: string } }) {
+export default function CheckoutPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isUserLoading } = useUser();
   const resolvedParams = use(params);
   const event = events.find(e => e.id === resolvedParams.id);
   const [isLoading, setIsLoading] = useState(false);
+
+  const ticketTypeId = searchParams.get('ticketType');
+  const quantity = parseInt(searchParams.get('quantity') || '1', 10);
+
+  const selectedTicket = event?.ticketTypes.find(t => t.id === ticketTypeId) || event?.ticketTypes[0];
+  const ticketPrice = selectedTicket?.price || 0;
+  const subtotal = ticketPrice * quantity;
+  const serviceFee = subtotal * 0.05; // 5% service fee
+  const total = subtotal + serviceFee;
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentFormSchema),
@@ -43,9 +53,10 @@ export default function CheckoutPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     if (!isUserLoading && !user) {
-      router.push(`/login?redirect_to=/checkout/${resolvedParams.id}`);
+      const currentUrl = `/checkout/${resolvedParams.id}?ticketType=${ticketTypeId || ''}&quantity=${quantity}`;
+      router.push(`/login?redirect_to=${encodeURIComponent(currentUrl)}`);
     }
-  }, [isUserLoading, user, router, resolvedParams.id]);
+  }, [isUserLoading, user, router, resolvedParams.id, ticketTypeId, quantity]);
 
 
   if (!event) {
@@ -56,7 +67,7 @@ export default function CheckoutPage({ params }: { params: { id: string } }) {
     setIsLoading(true);
     // Simulate payment processing
     await new Promise(resolve => setTimeout(resolve, 2000));
-    router.push(`/book/${event!.id}`);
+    router.push(`/book/${event!.id}?ticketType=${selectedTicket!.id}&quantity=${quantity}`);
   }
   
   if (isUserLoading || !user) {
@@ -86,14 +97,22 @@ export default function CheckoutPage({ params }: { params: { id: string } }) {
                   <p className="text-sm text-muted-foreground">{event.location}</p>
                 </div>
               </div>
-              <div className="mt-4 border-t pt-4">
-                <div className="flex justify-between">
-                  <span>Ticket (General Admission)</span>
-                  <span>${event.ticketTypes[0].price.toFixed(2)}</span>
+              <div className="mt-4 border-t pt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Ticket ({selectedTicket?.name})</span>
+                  <span>${ticketPrice.toFixed(2)} x {quantity}</span>
                 </div>
-                <div className="flex justify-between mt-2 font-bold text-lg">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal</span>
+                  <span>${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Service Fee (5%)</span>
+                  <span>${serviceFee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between mt-4 border-t pt-2 font-bold text-lg text-primary">
                   <span>Total</span>
-                  <span>${event.ticketTypes[0].price.toFixed(2)}</span>
+                  <span>${total.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>
@@ -164,7 +183,7 @@ export default function CheckoutPage({ params }: { params: { id: string } }) {
                   </div>
                   <Button type="submit" disabled={isLoading} size="lg" className="w-full !mt-6">
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isLoading ? 'Processing...' : `Pay $${event.ticketTypes[0].price.toFixed(2)}`}
+                    {isLoading ? 'Processing...' : `Pay $${total.toFixed(2)}`}
                   </Button>
                 </form>
               </Form>

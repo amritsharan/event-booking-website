@@ -28,6 +28,9 @@ export type Reservation = {
   imageUrl: string;
   imageHint: string;
   reservedAt: string;
+  ticketType?: string;
+  quantity?: number;
+  totalPrice?: number;
 };
 
 export type LoginHistory = {

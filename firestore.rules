@@ -51,5 +51,15 @@ service cloud.firestore {
         allow update, delete: if false; // Disallow updates and deletes
       }
     }
+
+    /**
+     * @description Secures event reviews. Anyone can read, signed in users can create.
+     * @path /events/{eventId}/reviews/{reviewId}
+     */
+    match /events/{eventId}/reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
   }
 }

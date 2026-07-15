@@ -38,6 +38,15 @@ function ReservationCard({ reservation }: { reservation: Reservation }) {
             <MapPin className="mr-2 h-4 w-4" />
             <span>{reservation.location}</span>
           </div>
+          {reservation.ticketType && (
+            <div className="mt-3 text-sm text-foreground/80 flex flex-wrap gap-x-4 gap-y-1 bg-secondary/20 p-2 rounded border border-border/40 w-fit">
+              <span><strong>Ticket:</strong> {reservation.ticketType}</span>
+              <span><strong>Qty:</strong> {reservation.quantity}</span>
+              {reservation.totalPrice && (
+                <span className="text-primary"><strong>Total:</strong> ${reservation.totalPrice.toFixed(2)}</span>
+              )}
+            </div>
+          )}
           <div className="mt-4">
             <Button asChild variant="secondary" disabled={reservationStatus === 'past'}>
               <Link href={`/events/${reservation.eventId}`}>View Event</Link>
