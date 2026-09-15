@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Star, Loader2, MessageSquare, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Review {
   id: string;
@@ -230,5 +231,3 @@ export function EventReviews({ eventId }: EventReviewsProps) {
     </div>
   );
 }
-
-import { cn } from '@/lib/utils';

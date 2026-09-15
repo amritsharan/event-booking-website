@@ -3,11 +3,12 @@ import { events } from '@/lib/data';
 import { notFound } from 'next/navigation';
 
 type Props = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const event = events.find(e => e.id === params.id);
+  const resolvedParams = await params;
+  const event = events.find(e => e.id === resolvedParams.id);
 
   if (!event) {
     return {

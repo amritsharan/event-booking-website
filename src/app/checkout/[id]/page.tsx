@@ -2,6 +2,7 @@
 
 import { useState, use, useEffect } from 'react';
 import { notFound, useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CreditCard, Loader2 } from 'lucide-react';
+import { CreditCard, Loader2, ArrowLeft, Tag, Check, ShieldCheck } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { useUser } from '@/firebase';
@@ -32,12 +33,20 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
   const event = events.find(e => e.id === resolvedParams.id);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Promo code state
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [promoError, setPromoError] = useState('');
+  const [promoSuccess, setPromoSuccess] = useState('');
+
   const ticketTypeId = searchParams.get('ticketType');
   const quantity = parseInt(searchParams.get('quantity') || '1', 10);
 
   const selectedTicket = event?.ticketTypes.find(t => t.id === ticketTypeId) || event?.ticketTypes[0];
   const ticketPrice = selectedTicket?.price || 0;
-  const subtotal = ticketPrice * quantity;
+  const rawSubtotal = ticketPrice * quantity;
+  const discountAmount = (rawSubtotal * discountPercent) / 100;
+  const subtotal = Math.max(0, rawSubtotal - discountAmount);
   const serviceFee = subtotal * 0.05; // 5% service fee
   const total = subtotal + serviceFee;
 
@@ -58,6 +67,23 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
     }
   }, [isUserLoading, user, router, resolvedParams.id, ticketTypeId, quantity]);
 
+  const handleApplyPromo = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPromoError('');
+    setPromoSuccess('');
+    const code = promoCodeInput.trim().toUpperCase();
+    if (code === 'GILDED10') {
+      setDiscountPercent(10);
+      setPromoSuccess('10% discount applied successfully!');
+    } else if (code === 'VIP20') {
+      setDiscountPercent(20);
+      setPromoSuccess('20% VIP discount applied successfully!');
+    } else if (code === '') {
+      setPromoError('Please enter a promo code.');
+    } else {
+      setPromoError('Invalid promo code. Try GILDED10 or VIP20');
+    }
+  };
 
   if (!event) {
     notFound();
@@ -66,7 +92,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
   async function onSubmit(values: PaymentFormValues) {
     setIsLoading(true);
     // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     router.push(`/book/${event!.id}?ticketType=${selectedTicket!.id}&quantity=${quantity}`);
   }
   
@@ -80,28 +106,70 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
 
   return (
     <div className="container py-12 md:py-16">
+      <div className="max-w-4xl mx-auto mb-6">
+        <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
+          <Link href={`/events/${event.id}`}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Event Details
+          </Link>
+        </Button>
+      </div>
+
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12 max-w-4xl mx-auto">
         <div>
-          <Card>
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="font-headline text-2xl">Order Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-start space-x-4">
-                <div className="relative w-32 h-24 rounded-md overflow-hidden flex-shrink-0">
+                <div className="relative w-28 h-20 rounded-md overflow-hidden flex-shrink-0">
                   <Image src={event.imageUrl} alt={event.name} fill style={{ objectFit: 'cover' }} data-ai-hint={event.imageHint} />
                 </div>
                 <div>
-                  <h4 className="font-bold">{event.name}</h4>
+                  <h4 className="font-bold text-foreground">{event.name}</h4>
                   <p className="text-sm text-muted-foreground">{format(new Date(event.date), 'MMMM d, yyyy')}</p>
-                  <p className="text-sm text-muted-foreground">{event.location}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{event.location}</p>
                 </div>
               </div>
+
+              {/* Promo Code Section */}
+              <div className="mt-6 border-t pt-4">
+                <form onSubmit={handleApplyPromo} className="flex gap-2">
+                  <div className="relative flex-grow">
+                    <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Promo code (e.g. GILDED10)"
+                      value={promoCodeInput}
+                      onChange={(e) => setPromoCodeInput(e.target.value)}
+                      className="pl-9 text-xs uppercase"
+                    />
+                  </div>
+                  <Button type="submit" variant="secondary" size="sm">
+                    Apply
+                  </Button>
+                </form>
+                {promoSuccess && (
+                  <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
+                    <Check className="h-3 w-3" /> {promoSuccess}
+                  </p>
+                )}
+                {promoError && (
+                  <p className="text-xs text-destructive mt-2">{promoError}</p>
+                )}
+              </div>
+
+              {/* Line Items */}
               <div className="mt-4 border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Ticket ({selectedTicket?.name})</span>
                   <span>${ticketPrice.toFixed(2)} x {quantity}</span>
                 </div>
+                {discountPercent > 0 && (
+                  <div className="flex justify-between text-sm text-green-500 font-medium">
+                    <span>Discount ({discountPercent}%)</span>
+                    <span>-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
                   <span>${subtotal.toFixed(2)}</span>
@@ -110,19 +178,25 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
                   <span>Service Fee (5%)</span>
                   <span>${serviceFee.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between mt-4 border-t pt-2 font-bold text-lg text-primary">
+                <div className="flex justify-between mt-4 border-t pt-3 font-bold text-lg text-primary">
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
               </div>
+
+              <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground bg-secondary/20 p-2.5 rounded-md border border-border/30">
+                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                <span>256-Bit SSL Encrypted & Secure Booking</span>
+              </div>
             </CardContent>
           </Card>
         </div>
+
         <div>
-          <Card>
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="font-headline text-2xl flex items-center gap-2"><CreditCard /> Payment Information</CardTitle>
-              <CardDescription>Enter your card details to complete the booking.</CardDescription>
+              <CardDescription>Enter card details to confirm your reservation.</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -147,7 +221,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
                       <FormItem>
                         <FormLabel>Card Number</FormLabel>
                         <FormControl>
-                          <Input placeholder="1111222233334444" {...field} />
+                          <Input placeholder="4000123456789010" maxLength={16} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -161,7 +235,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
                         <FormItem>
                           <FormLabel>Expiry (MM/YY)</FormLabel>
                           <FormControl>
-                            <Input placeholder="MM/YY" {...field} />
+                            <Input placeholder="12/28" maxLength={5} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -174,7 +248,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
                         <FormItem>
                           <FormLabel>CVC</FormLabel>
                           <FormControl>
-                            <Input placeholder="123" {...field} />
+                            <Input placeholder="123" maxLength={4} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -183,7 +257,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
                   </div>
                   <Button type="submit" disabled={isLoading} size="lg" className="w-full !mt-6">
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isLoading ? 'Processing...' : `Pay $${total.toFixed(2)}`}
+                    {isLoading ? 'Processing Reservation...' : `Pay $${total.toFixed(2)}`}
                   </Button>
                 </form>
               </Form>
